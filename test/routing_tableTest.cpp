@@ -44,6 +44,73 @@ TEST_CASE( "routing_tableTest/testInsertAndErase", "[unit]" )
 	}
 }
 
+TEST_CASE( "routing_tableTest/testIterate", "[unit]" )
+{
+	routing_table< unsigned, std::deque > table;
+	table.set_origin(0);
+
+	std::deque<unsigned> elems = {4, 25, 1337};
+	for (unsigned i : elems)
+		assertTrue( table.insert(i) );
+
+	routing_table<unsigned, std::deque>::const_iterator it = table.begin();
+
+	assertTrue( it != table.end() );
+	assertEquals( (*it), 4 );
+	++it;
+
+	assertTrue( it != table.end() );
+	assertEquals( (*it), 25 );
+	++it;
+
+	assertTrue( it != table.end() );
+	assertEquals( (*it), 1337 );
+	++it;
+
+	assertTrue( it == table.end() );
+}
+
+TEST_CASE( "routing_tableTest/testIterate.Again", "[unit]" )
+{
+	routing_table< unsigned, std::deque > table;
+	table.set_origin(0);
+
+	std::deque<unsigned> elems = {4, 25, 1337};
+	for (unsigned i : elems)
+		assertTrue( table.insert(i) );
+
+	routing_table<unsigned, std::deque>::const_iterator it = table.begin();
+	for (unsigned i : elems)
+	{
+		assertTrue( it != table.end() );
+		assertEquals( i, (*it) );
+		++it;
+	}
+
+	assertTrue( it == table.end() );
+}
+
+TEST_CASE( "routing_tableTest/testRandom", "[unit]" )
+{
+	routing_table< unsigned, std::deque > table;
+	table.set_origin(0);
+
+	{
+		routing_table<unsigned, std::deque>::const_iterator it = table.random();
+		assertTrue( it == table.end() );
+	}
+
+	std::deque<unsigned> elems = {4, 25, 1337};
+	for (unsigned i : elems)
+		assertTrue( table.insert(i) );
+
+	for (int i = 0; i < 50; ++i)
+	{
+		routing_table<unsigned, std::deque>::const_iterator it = table.random();
+		assertTrue( it != table.end() );
+	}
+}
+
 namespace {
 	class Peer
 	{
@@ -134,6 +201,16 @@ TEST_CASE( "routing_tableTest/testClass", "[unit]" )
 		assertEquals( pear.second, (*it).name );
 	}
 
+	auto it = table.begin();
+	for (auto pear : elems)
+	{
+		assertTrue( it != table.end() );
+		assertEquals( pear.first, (*it).ip );
+		assertEquals( pear.second, (*it).name );
+		++it;
+	}
+	assertTrue( it == table.end() );
+
 	for (auto pear : elems)
 	{
 		assertTrue( table.erase(pear.first) );
@@ -169,6 +246,16 @@ TEST_CASE( "routing_tableTest/testSharedPtrToClass", "[unit]" )
 		assertEquals( pear.first, (*it)->ip );
 		assertEquals( pear.second, (*it)->name );
 	}
+
+	auto it = table.begin();
+	for (auto pear : elems)
+	{
+		assertTrue( it != table.end() );
+		assertEquals( pear.first, (*it)->ip );
+		assertEquals( pear.second, (*it)->name );
+		++it;
+	}
+	assertTrue( it == table.end() );
 
 	for (auto pear : elems)
 	{
