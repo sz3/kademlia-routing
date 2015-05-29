@@ -25,10 +25,12 @@ TEST_CASE( "routing_tableTest/testInsertAndErase", "[unit]" )
 {
 	routing_table< unsigned, std::deque > table;
 	table.set_origin(0);
+	assertEquals( 0, table.size() );
 
 	std::deque<unsigned> elems = {4, 25, 1337};
 	for (unsigned i : elems)
 		assertTrue( table.insert(i) );
+	assertEquals( 3, table.size() );
 
 	for (unsigned i : elems)
 	{
@@ -42,6 +44,7 @@ TEST_CASE( "routing_tableTest/testInsertAndErase", "[unit]" )
 		assertTrue( table.erase(i) );
 		assertTrue( table.find(i) == table.end() );
 	}
+	assertEquals( 0, table.size() );
 }
 
 TEST_CASE( "routing_tableTest/testIterate", "[unit]" )
@@ -108,6 +111,30 @@ TEST_CASE( "routing_tableTest/testRandom", "[unit]" )
 	{
 		routing_table<unsigned, std::deque>::const_iterator it = table.random();
 		assertTrue( it != table.end() );
+		assertInRange( 4, (*it), 1337 );
+	}
+}
+
+TEST_CASE( "routing_tableTest/testRandom.Big", "[unit]" )
+{
+	routing_table< unsigned, std::deque > table;
+	table.set_origin(0);
+
+	{
+		routing_table<unsigned, std::deque>::const_iterator it = table.random();
+		assertTrue( it == table.end() );
+	}
+
+	std::deque<unsigned> elems;
+	for (unsigned i = 0; i < 1000; ++i)
+		assertTrue( table.insert(i) );
+	assertEquals( 1000, table.size() );
+
+	for (int i = 0; i < 50; ++i)
+	{
+		routing_table<unsigned, std::deque>::const_iterator it = table.random();
+		assertTrue( it != table.end() );
+		assertInRange( 0, (*it), 999 );
 	}
 }
 

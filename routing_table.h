@@ -2,7 +2,7 @@
 
 #include <algorithm>
 #include <deque>
-#include <iostream>
+#include <random>
 
 namespace kademlia {
 
@@ -67,6 +67,7 @@ public:
 			return false;
 
 		bucket.push_back(value);
+		++_size;
 		return true;
 	}
 
@@ -81,6 +82,7 @@ public:
 			return false;
 
 		bucket.erase(it);
+		--_size;
 		return true;
 	}
 
@@ -100,21 +102,33 @@ public:
 	{
 		std::random_device rd;
 		std::mt19937 rando(rd());
-		std::uniform_int_distribution<unsigned int> table_range(0, _table.size()-1);
 
-		for (unsigned i = 0; i < 5; ++i)
+		if (_size == 0)
+			return begin();
+
+		else if (_size > 100)
 		{
+			// use the table structure to favor values closer to _origin
+			std::uniform_int_distribution<unsigned int> table_range(0, _table.size()-1);
 			typename table::const_iterator bucket = _table.begin() + table_range(rando);
 			if ( !bucket->empty() )
-				return const_iterator(bucket->begin() + std::uniform_int_distribution<unsigned int>(0, bucket->size()-1)(rando), bucket, _table.end());
+			{
+				std::uniform_int_distribution<unsigned int> bucket_range(0, bucket->size()-1);
+				return const_iterator(bucket->begin() + bucket_range(rando), bucket, _table.end());
+			}
 
 			const_iterator it = const_iterator(bucket->begin(), bucket, _table.end());
 			if (it != end())
 				return it;
 		}
 
-		// eff it
-		return begin();
+		// if nodes <= 100, or if the clever lookup failed, iterate to a random value
+		const_iterator it = begin();
+		std::uniform_int_distribution<unsigned int> full_range(0, _size-1);
+		unsigned adv = full_range(rando);
+		for (unsigned i = 0; i < adv; ++i)
+			++it;
+		return it;
 	}
 
 	const_iterator begin() const
@@ -125,6 +139,11 @@ public:
 	list_iterator end() const
 	{
 		return _table.back().end();
+	}
+
+	unsigned size() const
+	{
+		return _size;
 	}
 
 protected:
@@ -142,6 +161,7 @@ protected:
 	Hash hash;
 	table _table;
 	HashType _origin;
+	unsigned _size = 0;
 };
 
 }//namespace
