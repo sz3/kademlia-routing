@@ -245,6 +245,29 @@ TEST_CASE( "routing_tableTest/testClass", "[unit]" )
 	}
 }
 
+TEST_CASE( "routing_tableTest/testFindAndModify", "[unit]" )
+{
+	routing_table< Peer, std::deque, Hasher > table;
+	table.set_origin(Peer(0, "foo"));
+
+	assertTrue( table.insert(Peer(4, "bar")) );
+
+	{
+		auto it = table.find(4);
+		assertTrue( it != table.end() );
+		assertEquals( "bar", (*it).name );
+		(*it).name = "foo";
+	}
+
+	{
+		auto it = table.find(4);
+		assertTrue( it != table.end() );
+		assertEquals( "foo", (*it).name );
+	}
+
+	assertEquals( 1, table.size() );
+}
+
 TEST_CASE( "routing_tableTest/testSharedPtrToClass", "[unit]" )
 {
 	routing_table< std::shared_ptr<Peer>, std::deque, Hasher > table;

@@ -1,3 +1,4 @@
+/* This code is subject to the terms of the Mozilla Public License, v.2.0. http://mozilla.org/MPL/2.0/. */
 #pragma once
 
 #include <algorithm>
@@ -14,14 +15,12 @@ protected:
 	using list = ListType<ValueType>;
 	using table = std::array<list, sizeof(HashType)*8>;
 
-public:
-	using list_iterator = typename list::const_iterator;
-
-	class const_iterator : public list_iterator
+	template <typename ListIterator, typename TableIterator>
+	class _iterator : public ListIterator
 	{
 	public:
-		const_iterator(const list_iterator& it, const typename table::const_iterator& begin, const typename table::const_iterator& end)
-			: list_iterator(it)
+		_iterator(const ListIterator& it, const TableIterator& begin, const TableIterator& end)
+			: ListIterator(it)
 			, _current(begin)
 			, _end(end)
 		{
@@ -29,9 +28,9 @@ public:
 				iterate_until_valid_or_end();
 		}
 
-		const_iterator& operator++()
+		_iterator& operator++()
 		{
-			list_iterator::operator++();
+			ListIterator::operator++();
 			iterate_until_valid_or_end();
 			return *this;
 		}
@@ -44,14 +43,19 @@ public:
 				++_current;
 				if (_current == _end)
 					break;
-				list_iterator::operator=(_current->begin());
+				ListIterator::operator=(_current->begin());
 			}
 		}
 
 	protected:
-		typename table::const_iterator _current;
-		typename table::const_iterator _end;
+		TableIterator _current;
+		TableIterator _end;
 	};
+
+public:
+	using list_iterator = typename list::const_iterator;
+	using iterator = _iterator<typename list::iterator, typename table::iterator>;
+	using const_iterator = _iterator<typename list::const_iterator, typename table::const_iterator>;
 
 public:
 	void set_origin(const ValueType& value)
@@ -96,6 +100,20 @@ public:
 		if (it == bucket.end())
 			return const_iterator(end(), _table.end(), _table.end());
 		return const_iterator(it, _table.begin() + i, _table.end());
+	}
+
+	// doesn't reorient the data structure.
+	// i.e, only use this if your aren't changing the hashable part of the key.
+	template <typename LookupType>
+	iterator find(const LookupType& key)
+	{
+		unsigned i = index(key);
+		list& bucket = _table[i];
+
+		auto it = std::find(bucket.begin(), bucket.end(), key);
+		if (it == bucket.end())
+			return iterator(_table.back().end(), _table.end(), _table.end());
+		return iterator(it, _table.begin() + i, _table.end());
 	}
 
 	const_iterator random() const
